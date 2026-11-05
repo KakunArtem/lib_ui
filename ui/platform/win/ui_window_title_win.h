@@ -35,6 +35,7 @@ public:
 	void initInWindow(not_null<RpWindow*> window);
 	void setText(const QString &text);
 	void setStyle(const style::WindowTitle &st);
+	void setBackgroundPainter(Fn<void(QPainter&, const QRect&)> painter);
 	[[nodiscard]] not_null<const style::WindowTitle*> st() const;
 	void setResizeEnabled(bool enabled);
 
@@ -62,6 +63,7 @@ private:
 	void updateShadowGeometry();
 
 	std::unique_ptr<PaddingHelper> _paddingHelper;
+	Fn<void(QPainter&, const QRect&)> _backgroundPainter;
 	TitleControls _controls;
 	object_ptr<Ui::PlainShadow> _shadow;
 

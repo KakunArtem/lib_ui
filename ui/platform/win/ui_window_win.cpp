@@ -253,6 +253,11 @@ void WindowHelper::setTitleStyle(const style::WindowTitle &st) {
 	updateWindowFrameColors();
 }
 
+void WindowHelper::setTitleBackgroundPainter(
+		Fn<void(QPainter&, const QRect&)> painter) {
+	_title->setBackgroundPainter(std::move(painter));
+}
+
 void WindowHelper::setNativeFrame(bool enabled) {
 	_title->setVisible(!enabled);
 	if (_handle) {

@@ -114,6 +114,13 @@ void TitleWidget::updateShadowGeometry() {
 	_shadow->setGeometry(0, height() - thickness, width(), thickness);
 }
 
+void TitleWidget::setBackgroundPainter(
+		Fn<void(QPainter&, const QRect&)> painter) {
+	_backgroundPainter = std::move(painter);
+	setAttribute(Qt::WA_OpaquePaintEvent, !_backgroundPainter);
+	update();
+}
+
 void TitleWidget::refreshGeometryWithWidth(int width) {
 	const auto add = additionalPadding();
 	setGeometry(0, 0, width, _controls.st()->height + add);
@@ -136,10 +143,15 @@ void TitleWidget::setResizeEnabled(bool enabled) {
 }
 
 void TitleWidget::paintEvent(QPaintEvent *e) {
-	const auto active = window()->isActiveWindow();
-	QPainter(this).fillRect(
-		e->rect(),
-		active ? _controls.st()->bgActive : _controls.st()->bg);
+	auto p = QPainter(this);
+	if (_backgroundPainter) {
+		_backgroundPainter(p, e->rect());
+	} else {
+		const auto active = window()->isActiveWindow();
+		p.fillRect(
+			e->rect(),
+			active ? _controls.st()->bgActive : _controls.st()->bg);
+	}
 }
 
 void TitleWidget::resizeEvent(QResizeEvent *e) {

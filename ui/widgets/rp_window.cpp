@@ -103,6 +103,11 @@ void RpWindow::setTitleStyle(const style::WindowTitle &st) {
 	_helper->setTitleStyle(st);
 }
 
+void RpWindow::setTitleBackgroundPainter(
+		Fn<void(QPainter&, const QRect&)> painter) {
+	_helper->setTitleBackgroundPainter(std::move(painter));
+}
+
 void RpWindow::setNativeFrame(bool enabled) {
 	_helper->setNativeFrame(enabled);
 }

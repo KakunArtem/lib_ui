@@ -176,6 +176,10 @@ void BasicWindowHelper::setTitle(const QString &title) {
 void BasicWindowHelper::setTitleStyle(const style::WindowTitle &st) {
 }
 
+void BasicWindowHelper::setTitleBackgroundPainter(
+		Fn<void(QPainter&, const QRect&)> painter) {
+}
+
 void BasicWindowHelper::setNativeFrame(bool enabled) {
 }
 

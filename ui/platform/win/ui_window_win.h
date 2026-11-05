@@ -30,6 +30,8 @@ public:
 	rpl::producer<int> additionalContentPaddingValue() const override;
 	void setTitle(const QString &title) override;
 	void setTitleStyle(const style::WindowTitle &st) override;
+	void setTitleBackgroundPainter(
+		Fn<void(QPainter&, const QRect&)> painter) override;
 	void setNativeFrame(bool enabled) override;
 	void setMinimumSize(QSize size) override;
 	void setFixedSize(QSize size) override;

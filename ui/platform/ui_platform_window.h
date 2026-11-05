@@ -57,6 +57,8 @@ public:
 	virtual void overrideSystemButtonDown(HitTestResult button);
 	virtual void setTitle(const QString &title);
 	virtual void setTitleStyle(const style::WindowTitle &st);
+	virtual void setTitleBackgroundPainter(
+		Fn<void(QPainter&, const QRect&)> painter);
 	virtual void setNativeFrame(bool enabled);
 	virtual void setMinimumSize(QSize size);
 	virtual void setFixedSize(QSize size);

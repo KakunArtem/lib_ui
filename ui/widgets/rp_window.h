@@ -67,6 +67,8 @@ public:
 
 	void setTitle(const QString &title);
 	void setTitleStyle(const style::WindowTitle &st);
+	void setTitleBackgroundPainter(
+		Fn<void(QPainter&, const QRect&)> painter);
 	void setNativeFrame(bool enabled);
 	void setMinimumSize(QSize size);
 	void setFixedSize(QSize size);
