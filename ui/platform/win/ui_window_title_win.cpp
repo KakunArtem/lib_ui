@@ -105,6 +105,7 @@ void TitleWidget::setStyle(const style::WindowTitle &st) {
 	} else if (!_shadow) {
 		_shadow.create(this, st::titleShadow);
 		updateShadowGeometry();
+		_shadow->show();
 	}
 	refreshGeometryWithWidth(window()->width());
 }
