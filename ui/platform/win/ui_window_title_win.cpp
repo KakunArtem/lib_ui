@@ -122,6 +122,10 @@ void TitleWidget::setBackgroundPainter(
 	update();
 }
 
+bool TitleWidget::hasBackgroundPainter() const {
+	return bool(_backgroundPainter);
+}
+
 void TitleWidget::refreshGeometryWithWidth(int width) {
 	const auto add = additionalPadding();
 	setGeometry(0, 0, width, _controls.st()->height + add);

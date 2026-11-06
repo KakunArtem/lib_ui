@@ -51,11 +51,19 @@ void ShowWindowMenu(not_null<QWidget*> widget, const QPoint &point) {
 	const auto mapped = point * widget->windowHandle()->devicePixelRatio();
 	POINT p{ mapped.x(), mapped.y() };
 	ClientToScreen(handle, &p);
+	const auto style = GetWindowLongPtr(handle, GWL_STYLE);
+	const auto hidden = !(style & WS_SYSMENU);
+	if (hidden) {
+		SetWindowLongPtr(handle, GWL_STYLE, style | WS_SYSMENU);
+	}
 	SendMessage(
 		handle,
 		0x313 /* WM_POPUPSYSTEMMENU */,
 		0,
 		MAKELPARAM(p.x, p.y));
+	if (hidden) {
+		SetWindowLongPtr(handle, GWL_STYLE, style);
+	}
 }
 
 void FixPopupMenuNativeEmojiPopup(not_null<PopupMenu*> menu) {

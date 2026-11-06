@@ -36,6 +36,7 @@ public:
 	void setText(const QString &text);
 	void setStyle(const style::WindowTitle &st);
 	void setBackgroundPainter(Fn<void(QPainter&, const QRect&)> painter);
+	[[nodiscard]] bool hasBackgroundPainter() const;
 	[[nodiscard]] not_null<const style::WindowTitle*> st() const;
 	void setResizeEnabled(bool enabled);
 

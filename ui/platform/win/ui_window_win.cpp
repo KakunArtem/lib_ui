@@ -48,6 +48,7 @@ constexpr auto kDWMWCP_DONOTROUND = DWORD(1);
 constexpr auto kDWMWA_WINDOW_CORNER_PREFERENCE = DWORD(33);
 constexpr auto kDWMWA_CAPTION_COLOR = DWORD(35);
 constexpr auto kDWMWA_TEXT_COLOR = DWORD(36);
+constexpr auto kDWMWA_COLOR_NONE = COLORREF(0xFFFFFFFE);
 
 // Undocumented messages of classic (unthemed) caption painting.
 constexpr auto kWM_NCUAHDRAWCAPTION = UINT(0x00AE);
@@ -256,6 +257,7 @@ void WindowHelper::setTitleStyle(const style::WindowTitle &st) {
 void WindowHelper::setTitleBackgroundPainter(
 		Fn<void(QPainter&, const QRect&)> painter) {
 	_title->setBackgroundPainter(std::move(painter));
+	updateWindowFrameColors();
 }
 
 void WindowHelper::setNativeFrame(bool enabled) {
@@ -474,6 +476,11 @@ bool WindowHelper::filterNativeEvent(
 		// Win+Up / system menu arrive here before any state change,
 		// so window may replace maximize / restore with its own behavior.
 		const auto command = (wParam & 0xFFF0);
+		if (command == SC_KEYMENU && lParam == VK_SPACE && nativeCaptionHidden()) {
+			ShowWindowMenu(window(), QPoint());
+			if (result) *result = 0;
+			return true;
+		}
 		if ((command != SC_MAXIMIZE && command != SC_RESTORE)
 			|| IsIconic(_handle)) {
 			return false;
@@ -868,10 +875,13 @@ void WindowHelper::updateWindowFrameColors(bool active) {
 	if (!_handle || !::Platform::IsWindows11OrGreater()) {
 		return;
 	}
+	updateNativeCaption();
 	const auto bg = active
 		? _title->st()->bgActive->c
 		: _title->st()->bg->c;
-	COLORREF bgRef = RGB(bg.red(), bg.green(), bg.blue());
+	COLORREF bgRef = nativeCaptionHidden()
+		? kDWMWA_COLOR_NONE
+		: RGB(bg.red(), bg.green(), bg.blue());
 	DwmSetWindowAttribute(
 		_handle,
 		kDWMWA_CAPTION_COLOR,
@@ -886,6 +896,38 @@ void WindowHelper::updateWindowFrameColors(bool active) {
 		kDWMWA_TEXT_COLOR,
 		&fgRef,
 		sizeof(COLORREF));
+}
+
+bool WindowHelper::nativeCaptionHidden() const {
+	return _title->hasBackgroundPainter() && !_title->isHidden();
+}
+
+void WindowHelper::updateNativeCaption() {
+	const auto hidden = nativeCaptionHidden();
+	const auto style = GetWindowLongPtr(_handle, GWL_STYLE);
+	const auto wanted = hidden ? (style & ~WS_SYSMENU) : (style | WS_SYSMENU);
+	if (wanted == style) {
+		return;
+	}
+	const auto flags = DWORD(WTNCA_NODRAWCAPTION | WTNCA_NODRAWICON);
+	auto options = WTA_OPTIONS{
+		.dwFlags = hidden ? flags : DWORD(0),
+		.dwMask = flags,
+	};
+	SetWindowThemeAttribute(_handle, WTA_NONCLIENT, &options, sizeof(options));
+	SetWindowLongPtr(_handle, GWL_STYLE, wanted);
+	SetWindowPos(
+		_handle,
+		0,
+		0,
+		0,
+		0,
+		0,
+		(SWP_FRAMECHANGED
+			| SWP_NOMOVE
+			| SWP_NOSIZE
+			| SWP_NOZORDER
+			| SWP_NOACTIVATE));
 }
 
 void WindowHelper::updateCloaking() {

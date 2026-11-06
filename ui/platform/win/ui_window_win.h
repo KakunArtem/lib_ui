@@ -57,6 +57,8 @@ private:
 	void enableCloakingForHidden();
 	void updateWindowFrameColors();
 	void updateWindowFrameColors(bool active);
+	void updateNativeCaption();
+	[[nodiscard]] bool nativeCaptionHidden() const;
 	void updateShadow();
 	void updateCornersRounding();
 	void fixMaximizedWindow();
