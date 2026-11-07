@@ -36,6 +36,11 @@ public:
 	void setLocked(bool locked);
 	void setShowIcon(bool shown);
 	void setShowText(bool shown);
+	void setBackgroundPainter(
+		Fn<void(QPainter&, const QRect&, bool active, bool over)> painter);
+	void setIconColors(
+		const style::color *fg,
+		const style::color *fgActive);
 
 	int resizeGetHeight(int newWidth) override;
 
@@ -50,7 +55,16 @@ public:
 
 private:
 	void paintEvent(QPaintEvent *e) override;
+	QImage prepareRippleMask() const override;
+	QPoint prepareRippleStartPosition() const override;
 
+	void paintIcon(
+		QPainter &p,
+		const style::icon &icon,
+		int x,
+		int y,
+		int outerw) const;
+	[[nodiscard]] QRect lockFillerRect(int firstLineWidth) const;
 	[[nodiscard]] const style::icon &computeIcon() const;
 	[[nodiscard]] int iconLeft() const;
 	[[nodiscard]] int iconTop() const;
@@ -60,6 +74,9 @@ private:
 	const style::SideBarButton &_st;
 	const style::icon *_iconOverride = nullptr;
 	const style::icon *_iconOverrideActive = nullptr;
+	const style::color *_iconFg = nullptr;
+	const style::color *_iconFgActive = nullptr;
+	Fn<void(QPainter&, const QRect&, bool, bool)> _backgroundPainter;
 	Ui::Text::String _text;
 	Ui::Text::String _badge;
 	QImage _iconCache;

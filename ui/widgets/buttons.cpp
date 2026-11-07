@@ -991,7 +991,10 @@ void SettingsButton::paintEvent(QPaintEvent *e) {
 	const auto paintOver = (isOver() || isDown()) && !isDisabled();
 	paintBg(p, e->rect(), paintOver);
 
-	paintRipple(p, 0, 0);
+	paintRipple(
+		p,
+		_st.pillRadius ? _st.pillMargins.left() : 0,
+		_st.pillRadius ? _st.pillMargins.top() : 0);
 
 	const auto outerw = width();
 	paintText(p, paintOver, outerw);
@@ -1003,9 +1006,34 @@ void SettingsButton::paintEvent(QPaintEvent *e) {
 
 void SettingsButton::paintBg(Painter &p, const QRect &rect, bool over) const {
 	const auto fill = ControlFill(over ? _st.textBgOver : _st.textBg);
-	if (fill.alpha() > 0) {
+	if (fill.alpha() <= 0) {
+		return;
+	} else if (_st.pillRadius) {
+		auto hq = PainterHighQualityEnabler(p);
+		p.setPen(Qt::NoPen);
+		p.setBrush(fill);
+		p.drawRoundedRect(
+			this->rect().marginsRemoved(_st.pillMargins),
+			_st.pillRadius,
+			_st.pillRadius);
+	} else {
 		p.fillRect(rect, fill);
 	}
+}
+
+QImage SettingsButton::prepareRippleMask() const {
+	return _st.pillRadius
+		? RippleAnimation::RoundRectMask(
+			rect().marginsRemoved(_st.pillMargins).size(),
+			_st.pillRadius)
+		: RippleButton::prepareRippleMask();
+}
+
+QPoint SettingsButton::prepareRippleStartPosition() const {
+	const auto position = RippleButton::prepareRippleStartPosition();
+	return _st.pillRadius
+		? (position - QPoint(_st.pillMargins.left(), _st.pillMargins.top()))
+		: position;
 }
 
 void SettingsButton::paintText(Painter &p, bool over, int outerw) const {

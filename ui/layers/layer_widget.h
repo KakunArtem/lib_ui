@@ -26,6 +26,8 @@ namespace Ui {
 
 class BoxContent;
 
+void SetMainMenuCornerRadius(int radius);
+
 enum class LayerOption {
 	CloseOther = (1 << 0),
 	KeepOther = (1 << 1),

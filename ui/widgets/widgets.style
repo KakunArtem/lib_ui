@@ -557,6 +557,9 @@ SettingsButton {
 	toggleSkip: pixels;
 
 	ripple: RippleAnimation;
+
+	pillMargins: margins;
+	pillRadius: pixels;
 }
 
 SettingsCountButton {
@@ -627,6 +630,8 @@ SideBarButton {
 	badgeBgMutedActive: color;
 	badgeFg: color;
 	ripple: RippleAnimation;
+	pillMargins: margins;
+	pillRadius: pixels;
 }
 
 Toast {

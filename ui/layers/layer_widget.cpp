@@ -22,6 +22,15 @@
 #include <QtGui/QtEvents>
 
 namespace Ui {
+namespace {
+
+auto MainMenuCornerRadius = 0;
+
+} // namespace
+
+void SetMainMenuCornerRadius(int radius) {
+	MainMenuCornerRadius = radius;
+}
 
 class LayerStackWidget::BackgroundWidget : public RpWidget {
 public:
@@ -264,7 +273,12 @@ void LayerStackWidget::BackgroundWidget::paintEvent(QPaintEvent *e) {
 
 	p.setOpacity(bgOpacity);
 	auto overSpecialOpacity = (layerOpacity * specialLayerOpacity);
-	auto bg = myrtlrect(mainMenuRight, 0, width() - mainMenuRight, height());
+	const auto overlap = std::min(MainMenuCornerRadius, mainMenuRight);
+	auto bg = myrtlrect(
+		mainMenuRight - overlap,
+		0,
+		width() - mainMenuRight + overlap,
+		height());
 
 	if (_mainMenuCache.isNull() && mainMenuRight > 0) {
 		// All cache images are taken together with their shadows,

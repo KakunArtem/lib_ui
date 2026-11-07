@@ -150,6 +150,62 @@ void SideBarButton::setShowText(bool shown) {
 	update();
 }
 
+void SideBarButton::setBackgroundPainter(
+		Fn<void(QPainter&, const QRect&, bool active, bool over)> painter) {
+	_backgroundPainter = std::move(painter);
+	setAttribute(Qt::WA_OpaquePaintEvent, !_backgroundPainter);
+	update();
+}
+
+void SideBarButton::setIconColors(
+		const style::color *fg,
+		const style::color *fgActive) {
+	_iconFg = fg;
+	_iconFgActive = fgActive;
+	_iconCache = _iconCacheActive = QImage();
+	update();
+}
+
+QImage SideBarButton::prepareRippleMask() const {
+	return _st.pillRadius
+		? RippleAnimation::RoundRectMask(
+			rect().marginsRemoved(_st.pillMargins).size(),
+			_st.pillRadius)
+		: RippleButton::prepareRippleMask();
+}
+
+QPoint SideBarButton::prepareRippleStartPosition() const {
+	const auto position = RippleButton::prepareRippleStartPosition();
+	return _st.pillRadius
+		? (position - QPoint(_st.pillMargins.left(), _st.pillMargins.top()))
+		: position;
+}
+
+void SideBarButton::paintIcon(
+		QPainter &p,
+		const style::icon &icon,
+		int x,
+		int y,
+		int outerw) const {
+	const auto fg = _active ? _iconFgActive : _iconFg;
+	if (fg) {
+		icon.paint(p, x, y, outerw, (*fg)->c);
+	} else {
+		icon.paint(p, x, y, outerw);
+	}
+}
+
+QRect SideBarButton::lockFillerRect(int firstLineWidth) const {
+	const auto charWidth = _st.style.font->width(QChar('l'));
+	const auto count = std::ceil(
+		st::sideBarButtonLockSize.width() / float(charWidth));
+	return QRect(
+		(width() - firstLineWidth) / 2,
+		_st.textTop,
+		int(count) * charWidth,
+		_st.style.font->height);
+}
+
 int SideBarButton::resizeGetHeight(int newWidth) {
 	auto result = _st.minHeight;
 	if (!_showText) {
@@ -167,9 +223,16 @@ void SideBarButton::paintEvent(QPaintEvent *e) {
 	const auto clip = e->rect();
 
 	const auto &bg = _active ? _st.textBgActive : _st.textBg;
-	p.fillRect(clip, bg);
+	if (_backgroundPainter) {
+		_backgroundPainter(p, rect(), _active, isOver() || isDown());
+	} else {
+		p.fillRect(clip, bg);
+	}
 
-	RippleButton::paintRipple(p, 0, 0);
+	RippleButton::paintRipple(
+		p,
+		_st.pillRadius ? _st.pillMargins.left() : 0,
+		_st.pillRadius ? _st.pillMargins.top() : 0);
 
 	if (_lock.locked) {
 		p.setOpacity(kPremiumLockedOpacity);
@@ -183,11 +246,20 @@ void SideBarButton::paintEvent(QPaintEvent *e) {
 			validateIconCache();
 			p.drawImage(x, y, _active ? _iconCacheActive : _iconCache);
 		} else {
-			icon.paint(p, x, y, width());
+			paintIcon(p, icon, x, y, width());
 		}
 	}
 	if (_showText) {
 		p.setPen(_active ? _st.textFgActive : _st.textFg);
+		if (_lock.locked && _backgroundPainter) {
+			// WHY: the lock's filler characters have no fill to hide them here.
+			const auto lines = _text.countLineWidths(
+				width() - 2 * _st.textSkip,
+				{ .reserve = kMaxLabelLines });
+			if (!lines.empty()) {
+				p.setClipRegion(QRegion(rect()) - lockFillerRect(lines.front()));
+			}
+		}
 		_text.draw(p, {
 			.position = { _st.textSkip, _st.textTop },
 			.availableWidth = (width() - 2 * _st.textSkip),
@@ -195,6 +267,7 @@ void SideBarButton::paintEvent(QPaintEvent *e) {
 			.pausedEmoji = _paused && _paused(),
 			.elisionLines = kMaxLabelLines,
 		});
+		p.setClipping(false);
 	}
 
 	if (_iconCacheBadgeWidth) {
@@ -290,7 +363,7 @@ void SideBarButton::validateIconCache() {
 	image.fill(Qt::transparent);
 	{
 		auto p = QPainter(&image);
-		icon.paint(p, 0, 0, icon.width());
+		paintIcon(p, icon, 0, 0, icon.width());
 		p.setCompositionMode(QPainter::CompositionMode_Source);
 		auto hq = PainterHighQualityEnabler(p);
 		if (_iconCacheBadgeWidth) {

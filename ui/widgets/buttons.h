@@ -349,6 +349,9 @@ protected:
 
 	void paintEvent(QPaintEvent *e) override;
 
+	QImage prepareRippleMask() const override;
+	QPoint prepareRippleStartPosition() const override;
+
 	void paintBg(Painter &p, const QRect &rect, bool over) const;
 	void paintText(Painter &p, bool over, int outerw) const;
 	void paintToggle(Painter &p, int outerw) const;
