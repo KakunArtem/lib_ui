@@ -9,6 +9,7 @@
 #include "base/qt/qt_common_adapters.h"
 #include "ui/painter.h"
 #include "ui/widgets/popup_menu.h"
+#include "ui/widgets/soft_controls.h"
 #include "ui/integration.h"
 #include "styles/palette.h"
 #include "styles/style_widgets.h"
@@ -82,7 +83,7 @@ MaskedInputField::MaskedInputField(
 	}, lifetime());
 	updatePalette();
 
-	if (_st.textBg->c.alphaF() >= 1. && !_st.borderRadius) {
+	if (ControlFill(_st.textBg).alphaF() >= 1. && !_st.borderRadius) {
 		setAttribute(Qt::WA_OpaquePaintEvent);
 	}
 
@@ -149,7 +150,10 @@ void MaskedInputField::paintEvent(QPaintEvent *e) {
 	auto p = QPainter(this);
 
 	auto r = rect().intersected(e->rect());
-	p.fillRect(r, _st.textBg);
+	const auto fill = ControlFill(_st.textBg);
+	if (fill.alpha() > 0) {
+		p.fillRect(r, fill);
+	}
 	if (_st.border) {
 		p.fillRect(0, height() - _st.border, width(), _st.border, _st.borderFg->b);
 	}

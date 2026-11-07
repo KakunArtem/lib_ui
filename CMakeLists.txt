@@ -280,6 +280,8 @@ PRIVATE
     ui/widgets/side_bar_button.h
     ui/widgets/shadow.cpp
     ui/widgets/shadow.h
+    ui/widgets/soft_controls.cpp
+    ui/widgets/soft_controls.h
     ui/widgets/time_input.cpp
     ui/widgets/time_input.h
     ui/widgets/tooltip.cpp

@@ -12,6 +12,7 @@
 #include "ui/image/image_prepare.h"
 #include "ui/text/text_utilities.h"
 #include "ui/widgets/checkbox.h"
+#include "ui/widgets/soft_controls.h"
 #include "ui/painter.h"
 #include "ui/rect.h"
 #include "ui/qt_object_factory.h"
@@ -271,7 +272,10 @@ void FlatButton::paintEvent(QPaintEvent *e) {
 	QPainter p(this);
 
 	const auto inner = QRect(0, height() - _st.height, width(), _st.height);
-	p.fillRect(inner, isOver() ? _st.overBgColor : _st.bgColor);
+	const auto fill = ControlFill(isOver() ? _st.overBgColor : _st.bgColor);
+	if (fill.alpha() > 0) {
+		p.fillRect(inner, fill);
+	}
 
 	paintRipple(p, 0, 0);
 
@@ -485,16 +489,23 @@ void RoundButton::paintEvent(QPaintEvent *e) {
 	}
 	const auto drawRect = [&](const RoundRect &rect) {
 		const auto fill = myrtlrect(rounded);
+		const auto mapped = ControlFill(rect.color());
+		const auto changed = (mapped != rect.color()->c);
+		const auto brush = _brushOverride
+			? *_brushOverride
+			: changed
+			? QBrush(mapped)
+			: rect.color()->b;
 		if (_fullRadius) {
 			const auto radius = rounded.height() / 2;
 			PainterHighQualityEnabler hq(p);
 			p.setPen(_penOverride ? *_penOverride : Qt::NoPen);
-			p.setBrush(_brushOverride ? *_brushOverride : rect.color()->b);
+			p.setBrush(brush);
 			p.drawRoundedRect(fill, radius, radius);
 		} else if (_cornerRadii) {
 			auto hq = PainterHighQualityEnabler(p);
 			p.setPen(_penOverride ? *_penOverride : Qt::NoPen);
-			p.setBrush(_brushOverride ? *_brushOverride : rect.color()->b);
+			p.setBrush(brush);
 			p.drawPath(
 				ComplexRoundedRectPath(
 					fill,
@@ -502,10 +513,10 @@ void RoundButton::paintEvent(QPaintEvent *e) {
 					(*_cornerRadii)[1],
 					(*_cornerRadii)[2],
 					(*_cornerRadii)[3]));
-		} else if (_brushOverride) {
+		} else if (_brushOverride || changed) {
 			PainterHighQualityEnabler hq(p);
 			p.setPen(_penOverride ? *_penOverride : Qt::NoPen);
-			p.setBrush(*_brushOverride);
+			p.setBrush(brush);
 			const auto radius = _st.radius ? _st.radius : st::buttonRadius;
 			p.drawRoundedRect(fill, radius, radius);
 		} else {
@@ -991,7 +1002,10 @@ void SettingsButton::paintEvent(QPaintEvent *e) {
 }
 
 void SettingsButton::paintBg(Painter &p, const QRect &rect, bool over) const {
-	p.fillRect(rect, over ? _st.textBgOver : _st.textBg);
+	const auto fill = ControlFill(over ? _st.textBgOver : _st.textBg);
+	if (fill.alpha() > 0) {
+		p.fillRect(rect, fill);
+	}
 }
 
 void SettingsButton::paintText(Painter &p, bool over, int outerw) const {

@@ -20,6 +20,7 @@
 #include "ui/widgets/fields/custom_field_object.h"
 #include "ui/widgets/labels.h"
 #include "ui/widgets/popup_menu.h"
+#include "ui/widgets/soft_controls.h"
 #include "ui/emoji_config.h"
 #include "ui/ui_utility.h"
 #include "ui/painter.h"
@@ -1925,7 +1926,7 @@ InputField::InputField(
 		}
 	}
 
-	if (_st.textBg->c.alphaF() >= 1. && !_st.borderRadius) {
+	if (ControlFill(_st.textBg).alphaF() >= 1. && !_st.borderRadius) {
 		setAttribute(Qt::WA_OpaquePaintEvent);
 	}
 
@@ -2886,7 +2887,12 @@ void InputField::paintRoundSurrounding(
 	auto pen = anim::pen(_st.borderFg, _st.borderFgActive, focusedDegree);
 	pen.setWidthF(border);
 	p.setPen(pen);
-	p.setBrush(anim::brush(_st.textBg, _st.textBgActive, focusedDegree));
+	if (ControlFill(_st.textBg).alpha() > 0
+		|| ControlFill(_st.textBgActive).alpha() > 0) {
+		p.setBrush(anim::brush(_st.textBg, _st.textBgActive, focusedDegree));
+	} else {
+		p.setBrush(Qt::NoBrush);
+	}
 
 	PainterHighQualityEnabler hq(p);
 	const auto radius = _st.borderRadius - borderHalf;
@@ -2902,8 +2908,9 @@ void InputField::paintFlatSurrounding(
 		QRect clip,
 		float64 errorDegree,
 		float64 focusedDegree) {
-	if (_st.textBg->c.alphaF() > 0.) {
-		p.fillRect(clip, _st.textBg);
+	const auto fill = ControlFill(_st.textBg);
+	if (fill.alphaF() > 0.) {
+		p.fillRect(clip, fill);
 	}
 	if (_st.border) {
 		p.fillRect(0, height() - _st.border, width(), _st.border, _st.borderFg);

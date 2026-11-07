@@ -6,6 +6,7 @@
 //
 #include "ui/widgets/box_content_divider.h"
 
+#include "ui/widgets/soft_controls.h"
 #include "styles/style_layers.h"
 #include "styles/style_widgets.h"
 #include "styles/palette.h"
@@ -29,7 +30,10 @@ BoxContentDivider::BoxContentDivider(
 void BoxContentDivider::paintEvent(QPaintEvent *e) {
 	QPainter p(this);
 
-	p.fillRect(e->rect(), _st.bg);
+	const auto fill = ControlFill(_st.bg);
+	if (fill.alpha() > 0) {
+		p.fillRect(e->rect(), fill);
+	}
 	if (_parts & RectPart::Top) {
 		paintTop(p);
 	}
