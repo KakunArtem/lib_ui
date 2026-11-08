@@ -64,6 +64,7 @@ protected:
 	void enableMouseSelecting(not_null<RpWidget*> widget);
 
 	virtual int contentHeight() const = 0;
+	QImage prepareRippleMask() const override;
 
 	void keyPressEvent(QKeyEvent *e) override;
 	void keyReleaseEvent(QKeyEvent *e) override;

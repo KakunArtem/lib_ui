@@ -7,6 +7,7 @@
 #include "ui/widgets/menu/menu_multiline_action.h"
 
 #include "ui/widgets/labels.h"
+#include "ui/widgets/menu/menu_item_background.h"
 #include "ui/qt_object_factory.h"
 
 namespace Ui::Menu {
@@ -82,7 +83,7 @@ int MultilineAction::contentHeight() const {
 void MultilineAction::paintEvent(QPaintEvent *e) {
 	auto p = QPainter(this);
 	const auto selected = isSelected();
-	p.fillRect(rect(), selected ? _st.itemBgOver : _st.itemBg);
+	PaintItemBackground(p, _st, rect(), selected);
 	RippleButton::paintRipple(p, 0, 0);
 	if (const auto icon = (selected ? _iconOver : _icon)) {
 		icon->paint(p, _st.itemIconPosition, width());

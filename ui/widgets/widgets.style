@@ -1001,6 +1001,9 @@ defaultPopupMenu: PopupMenu {
 	duration: 150;
 	showDuration: 200;
 }
+menuSoftItemMargin: 4px;
+menuSoftItemRadius: 8px;
+popupMenuSoftRadius: 12px;
 
 defaultPillTabs: PillTabs {
 	height: 36px;

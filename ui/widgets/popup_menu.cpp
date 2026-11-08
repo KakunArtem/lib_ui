@@ -14,6 +14,7 @@
 #include "ui/widgets/shadow.h"
 #include "ui/widgets/menu/menu_item_base.h"
 #include "ui/widgets/scroll_area.h"
+#include "ui/widgets/soft_controls.h"
 #include "ui/wrap/padding_wrap.h"
 #include "ui/delayed_activation.h"
 #include "ui/painter.h"
@@ -37,6 +38,10 @@ namespace Ui {
 namespace {
 
 constexpr auto kSubmenuAimDelay = crl::time(300);
+
+[[nodiscard]] int MenuRadius(const style::PopupMenu &st) {
+	return SoftControls() ? st::popupMenuSoftRadius : st.radius;
+}
 
 [[nodiscard]] bool PointInTriangle(
 		QPoint point,
@@ -107,7 +112,7 @@ struct PopupMenu::SubmenuAim {
 PopupMenu::PopupMenu(QWidget *parent, const style::PopupMenu &st)
 : RpWidget(parent)
 , _st(st)
-, _roundRect(_st.radius, _st.menu.itemBg)
+, _roundRect(MenuRadius(_st), _st.menu.itemBg)
 , _boxShadow(_st.shadow)
 , _scroll(this, st::defaultMultiSelect.scroll)
 , _menu(_scroll->setOwnedWidget(
@@ -121,7 +126,7 @@ PopupMenu::PopupMenu(QWidget *parent, const style::PopupMenu &st)
 PopupMenu::PopupMenu(QWidget *parent, QMenu *menu, const style::PopupMenu &st)
 : RpWidget(parent)
 , _st(st)
-, _roundRect(_st.radius, _st.menu.itemBg)
+, _roundRect(MenuRadius(_st), _st.menu.itemBg)
 , _boxShadow(_st.shadow)
 , _scroll(this, st::defaultMultiSelect.scroll)
 , _menu(_scroll->setOwnedWidget(
@@ -267,7 +272,7 @@ void PopupMenu::updateRoundingOverlay() {
 		_roundRect.paint(p, _inner, RectPart::AllCorners);
 		if (!_grabbingForPanelAnimation) {
 			p.setCompositionMode(QPainter::CompositionMode_SourceOver);
-			_boxShadow.paint(p, _inner, _st.radius);
+			_boxShadow.paint(p, _inner, MenuRadius(_st));
 		}
 	}, _roundingOverlay->lifetime());
 
@@ -898,9 +903,9 @@ void PopupMenu::prepareShowAnimation() {
 
 	const auto pixelRatio = style::DevicePixelRatio();
 	_showAnimation = std::make_unique<PanelAnimation>(_st.animation, _origin);
-	_showAnimation->setFinalImage(std::move(cache), QRect(_inner.topLeft() * pixelRatio, _inner.size() * pixelRatio), _st.radius);
+	_showAnimation->setFinalImage(std::move(cache), QRect(_inner.topLeft() * pixelRatio, _inner.size() * pixelRatio), MenuRadius(_st));
 	if (_useTransparency) {
-		_showAnimation->setCornerMasks(Images::CornersMask(_st.radius));
+		_showAnimation->setCornerMasks(Images::CornersMask(MenuRadius(_st)));
 	} else {
 		_showAnimation->setSkipShadow(true);
 	}

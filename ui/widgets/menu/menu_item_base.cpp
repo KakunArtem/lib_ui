@@ -7,6 +7,7 @@
 #include "ui/widgets/menu/menu_item_base.h"
 
 #include "ui/widgets/menu/menu.h"
+#include "ui/widgets/menu/menu_item_background.h"
 
 #include <QtGui/QtEvents>
 
@@ -17,6 +18,10 @@ ItemBase::ItemBase(
 	const style::Menu &st)
 : RippleButton(parent, st.ripple)
 , _menu(parent) {
+}
+
+QImage ItemBase::prepareRippleMask() const {
+	return ItemRippleMask(size());
 }
 
 void ItemBase::setSelected(
