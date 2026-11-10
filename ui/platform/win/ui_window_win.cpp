@@ -514,6 +514,18 @@ bool WindowHelper::filterNativeEvent(
 		_title->update();
 	} return false;
 
+	case WM_PAINT: {
+		// WHY: without a redirection bitmap BeginPaint reports an empty
+		// rect, so Qt's expose syncs nothing and updates held while the
+		// window was minimized would never be painted.
+		const auto style = GetWindowLongPtr(_handle, GWL_EXSTYLE);
+		if (style & WS_EX_NOREDIRECTIONBITMAP) {
+			QCoreApplication::postEvent(
+				window(),
+				new QEvent(QEvent::UpdateRequest));
+		}
+	} return false;
+
 	case WM_NCPAINT: {
 		if (::Platform::IsWindows8OrGreater() || _title->isHidden()) {
 			return false;
