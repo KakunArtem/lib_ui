@@ -9,6 +9,7 @@
 #include "ui/widgets/menu/menu_action.h"
 #include "ui/widgets/menu/menu_item_base.h"
 #include "ui/widgets/menu/menu_separator.h"
+#include "ui/platform/ui_popup_backdrop.h"
 #include "ui/widgets/scroll_area.h"
 #include "styles/style_widgets.h"
 
@@ -54,7 +55,12 @@ void Menu::init() {
 
 	paintRequest(
 	) | rpl::on_next([=](const QRect &clip) {
-		QPainter(this).fillRect(clip, _st.itemBg);
+		auto p = QPainter(this);
+		if (Platform::InPopupBackdrop(p)) {
+			Platform::FillPopupBackground(p, clip, _st.itemBg->c);
+		} else {
+			p.fillRect(clip, _st.itemBg);
+		}
 	}, lifetime());
 
 	positionValue(

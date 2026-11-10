@@ -186,6 +186,7 @@ private:
 
 	using TriggeredSource = Menu::TriggeredSource;
 	void validateCompositingSupport();
+	void updateNativeBackdrop();
 	void handleMenuResize();
 	void handleActivated(const Menu::CallbackData &data);
 	void handleTriggered(const Menu::CallbackData &data);
@@ -257,6 +258,7 @@ private:
 	rpl::variable<AnimatePhase> _animatePhase = AnimatePhase::Hidden;
 
 	bool _useTransparency = true;
+	bool _nativeBackdrop = false;
 	bool _hiding = false;
 	QPixmap _cache;
 	Animations::Simple _a_opacity;

@@ -7,6 +7,7 @@
 #include "ui/widgets/menu/menu_separator.h"
 
 #include "ui/painter.h"
+#include "ui/platform/ui_popup_backdrop.h"
 #include "styles/style_widgets.h"
 
 namespace Ui::Menu {
@@ -29,7 +30,12 @@ Separator::Separator(
 	) | rpl::on_next([=] {
 		Painter p(this);
 
-		p.fillRect(0, 0, width(), _height, _bg);
+		const auto bg = QRect(0, 0, width(), _height);
+		if (Platform::InPopupBackdrop(p)) {
+			Platform::FillPopupBackground(p, bg, _bg->c);
+		} else {
+			p.fillRect(bg, _bg);
+		}
 		p.fillRect(
 			_padding.left(),
 			_padding.top(),

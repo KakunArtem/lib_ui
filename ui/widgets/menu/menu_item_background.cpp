@@ -7,6 +7,7 @@
 #include "ui/widgets/menu/menu_item_background.h"
 
 #include "ui/effects/ripple_animation.h"
+#include "ui/platform/ui_popup_backdrop.h"
 #include "ui/widgets/soft_controls.h"
 #include "ui/painter.h"
 #include "styles/style_widgets.h"
@@ -28,14 +29,24 @@ void PaintItemBackground(
 		const style::Menu &st,
 		const QRect &rect,
 		bool selected) {
-	if (!SoftControls()) {
-		if (selected && st.itemBgOver->c.alpha() < 255) {
+	const auto backdrop = Platform::InPopupBackdrop(p);
+	const auto fillBase = [&] {
+		if (backdrop) {
+			Platform::FillPopupBackground(p, rect, st.itemBg->c);
+		} else {
 			p.fillRect(rect, st.itemBg);
 		}
-		p.fillRect(rect, selected ? st.itemBgOver : st.itemBg);
+	};
+	if (!SoftControls()) {
+		if (backdrop || (selected && st.itemBgOver->c.alpha() < 255)) {
+			fillBase();
+		}
+		if (selected || !backdrop) {
+			p.fillRect(rect, selected ? st.itemBgOver : st.itemBg);
+		}
 		return;
 	}
-	p.fillRect(rect, st.itemBg);
+	fillBase();
 	if (!selected) {
 		return;
 	}

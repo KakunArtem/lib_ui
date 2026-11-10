@@ -158,6 +158,8 @@ PRIVATE
     ui/platform/ui_platform_window.cpp
     ui/platform/ui_platform_window.h
     ui/platform/ui_platform_utility.h
+    ui/platform/ui_popup_backdrop.cpp
+    ui/platform/ui_popup_backdrop.h
     ui/style/style_core.cpp
     ui/style/style_core.h
     ui/style/style_core_color.cpp

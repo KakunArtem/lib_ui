@@ -10,7 +10,9 @@
 #include "base/invoke_queued.h"
 #include "base/weak_qptr.h"
 #include "ui/image/image_prepare.h"
+#include "ui/gl/gl_surface.h"
 #include "ui/platform/ui_platform_utility.h"
+#include "ui/platform/ui_popup_backdrop.h"
 #include "ui/widgets/shadow.h"
 #include "ui/widgets/menu/menu_item_base.h"
 #include "ui/widgets/scroll_area.h"
@@ -177,6 +179,37 @@ void PopupMenu::init() {
 		setAttribute(Qt::WA_TranslucentBackground, false);
 		setAttribute(Qt::WA_OpaquePaintEvent, true);
 	}
+
+	if (_useTransparency && Platform::PopupBackdrop()) {
+		GL::EnsureWindowRhi(this);
+		updateNativeBackdrop();
+		winIdValue() | rpl::on_next([=](WId id) {
+			if (id && _nativeBackdrop) {
+				const auto dark = (_st.menu.itemBg->c.lightness() < 128);
+				Platform::ApplyPopupBackdrop(this, dark);
+			}
+		}, lifetime());
+	}
+}
+
+void PopupMenu::updateNativeBackdrop() {
+	const auto wanted = _useTransparency
+		&& Platform::PopupBackdrop()
+		&& _additionalMenuPadding.isNull()
+		&& _additionalMenuMargins.isNull();
+	if (_nativeBackdrop == wanted) {
+		return;
+	}
+	_nativeBackdrop = wanted;
+	Platform::MarkPopupBackdrop(this, wanted);
+	if (testAttribute(Qt::WA_WState_Created)) {
+		if (wanted) {
+			const auto dark = (_st.menu.itemBg->c.lightness() < 128);
+			Platform::ApplyPopupBackdrop(this, dark);
+		} else {
+			Platform::RemovePopupBackdrop(this);
+		}
+	}
 }
 
 not_null<PopupMenu*> PopupMenu::ensureSubmenu(
@@ -233,7 +266,7 @@ void PopupMenu::validateCompositingSupport() {
 			std::max(line, additional.bottom()));
 		_margins = QMargins();
 	} else {
-		const auto ext = _boxShadow.extend();
+		const auto ext = _nativeBackdrop ? QMargins() : _boxShadow.extend();
 		_padding = QMargins(
 			std::max(ext.left(), additional.left()),
 			std::max(ext.top(), additional.top()),
@@ -248,7 +281,7 @@ void PopupMenu::validateCompositingSupport() {
 }
 
 void PopupMenu::updateRoundingOverlay() {
-	if (!_useTransparency) {
+	if (!_useTransparency || _nativeBackdrop) {
 		_roundingOverlay.destroy();
 		return;
 	} else if (_roundingOverlay) {
@@ -426,7 +459,9 @@ void PopupMenu::paintEvent(QPaintEvent *e) {
 }
 
 void PopupMenu::paintBg(QPainter &p) {
-	if (!_useTransparency) {
+	if (_nativeBackdrop) {
+		Platform::FillPopupBackground(p, rect(), _st.menu.itemBg->c);
+	} else if (!_useTransparency) {
 		p.fillRect(0, 0, width() - _padding.right(), _padding.top(), _st.shadowFallback);
 		p.fillRect(width() - _padding.right(), 0, _padding.right(), height() - _padding.bottom(), _st.shadowFallback);
 		p.fillRect(_padding.left(), height() - _padding.bottom(), width() - _padding.left(), _padding.bottom(), _st.shadowFallback);
@@ -774,6 +809,7 @@ void PopupMenu::setAdditionalMenuPadding(
 		_additionalMenuPadding = padding;
 		_additionalMenuMargins = margins;
 		_roundingOverlay.destroy();
+		updateNativeBackdrop();
 	}
 }
 
