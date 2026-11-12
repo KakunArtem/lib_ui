@@ -41,6 +41,25 @@
 namespace Ui {
 namespace {
 
+int CustomRadius = 0;
+
+[[nodiscard]] int BorderCacheSize() {
+	const auto &extend = st::callShadow.extend;
+	const auto shadow = std::max({
+		extend.left(),
+		extend.top(),
+		extend.right(),
+		extend.bottom(),
+	});
+	return std::max(
+		st::separatePanelBorderCacheSize,
+		3 * (shadow + SeparatePanelRadius()));
+}
+
+[[nodiscard]] bool InsetBottom() {
+	return SeparatePanelRadius() > st::callRadius;
+}
+
 void OverlayWidgetCache(QPainter &p, Ui::RpWidget *widget) {
 	if (widget) {
 		widget->show();
@@ -166,6 +185,14 @@ PanelShow::operator bool() const {
 }
 
 } // namespace
+
+void SetSeparatePanelRadius(int radius) {
+	CustomRadius = radius;
+}
+
+int SeparatePanelRadius() {
+	return CustomRadius ? CustomRadius : st::callRadius;
+}
 
 ContrastColors ComputeContrastColors(QColor background) {
 	const auto contrast = 2.5;
@@ -688,12 +715,15 @@ void SeparatePanel::overrideBottomBarColor(std::optional<QColor> color) {
 }
 
 void SeparatePanel::setBottomBarHeight(int height) {
-	Expects(!height || height >= st::callRadius);
+	Expects(!height || height >= SeparatePanelRadius());
 
 	if (_bottomBarHeight == height) {
 		return;
 	}
 	_bottomBarHeight = height;
+	if (InsetBottom()) {
+		updateControlsGeometry();
+	}
 	update();
 }
 
@@ -1089,7 +1119,7 @@ void SeparatePanel::validateBorderImage() {
 
 QPixmap SeparatePanel::createBorderImage(QColor color) const {
 	const auto shadowPadding = st::callShadow.extend;
-	const auto cacheSize = st::separatePanelBorderCacheSize;
+	const auto cacheSize = BorderCacheSize();
 	auto cache = QImage(
 		cacheSize * style::DevicePixelRatio(),
 		cacheSize * style::DevicePixelRatio(),
@@ -1107,8 +1137,8 @@ QPixmap SeparatePanel::createBorderImage(QColor color) const {
 		PainterHighQualityEnabler hq(p);
 		p.drawRoundedRect(
 			myrtlrect(inner),
-			st::callRadius,
-			st::callRadius);
+			SeparatePanelRadius(),
+			SeparatePanelRadius());
 	}
 	return PixmapFromImage(std::move(cache));
 }
@@ -1473,11 +1503,17 @@ void SeparatePanel::updateControlsGeometry() {
 	const auto padding = computePadding();
 	const auto top = padding.top()
 		+ (_fullscreen.current() ? 0 : _titleHeight);
+	const auto inset = (InsetBottom()
+		&& _useTransparency
+		&& !_fullscreen.current()
+		&& !_bottomBarHeight)
+		? SeparatePanelRadius()
+		: 0;
 	_body->setGeometry(
 		padding.left(),
 		top,
 		width() - padding.left() - padding.right(),
-		height() - top - padding.bottom());
+		height() - top - padding.bottom() - inset);
 }
 
 void SeparatePanel::paintEvent(QPaintEvent *e) {
@@ -1519,11 +1555,11 @@ void SeparatePanel::paintEvent(QPaintEvent *e) {
 
 void SeparatePanel::paintShadowBorder(QPainter &p) const {
 	const auto factor = style::DevicePixelRatio();
-	const auto size = st::separatePanelBorderCacheSize;
+	const auto size = BorderCacheSize();
 	const auto part1 = size / 3;
 	const auto part2 = size - part1;
 	const auto corner = QSize(part1, part1) * factor;
-	const auto radius = st::callRadius;
+	const auto radius = SeparatePanelRadius();
 
 	const auto &header = (_titleHeight
 		&& !_fullscreen.current()

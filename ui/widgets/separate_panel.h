@@ -50,6 +50,9 @@ class FadeWrapScaled;
 template <typename Widget>
 class FadeWrap;
 
+void SetSeparatePanelRadius(int radius);
+[[nodiscard]] int SeparatePanelRadius();
+
 struct SeparatePanelArgs {
 	QWidget *parent = nullptr;
 	Platform::ForeignParent transientParent;
