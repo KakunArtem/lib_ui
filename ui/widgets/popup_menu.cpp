@@ -864,9 +864,14 @@ void PopupMenu::prepareCache() {
 }
 
 void PopupMenu::startOpacityAnimation(bool hiding) {
-	if (!_useTransparency) {
+	if (!_useTransparency || _nativeBackdrop) {
 		_a_opacity.stop();
 		_hiding = hiding;
+		if (_nativeBackdrop) {
+			_animatePhase = hiding
+				? AnimatePhase::StartHide
+				: AnimatePhase::Shown;
+		}
 		if (_hiding) {
 			InvokeQueued(this, [=] {
 				if (_hiding) {
@@ -949,8 +954,13 @@ void PopupMenu::prepareShowAnimation() {
 }
 
 void PopupMenu::startShowAnimation() {
-	if (!_useTransparency) {
+	if (!_useTransparency || _nativeBackdrop) {
+		// WHY: the system backdrop covers the whole window at once, so an
+		// animated frame would show an empty frosted box around it.
 		_a_show.stop();
+		if (_nativeBackdrop) {
+			_animatePhase = AnimatePhase::Shown;
+		}
 		update();
 		return;
 	}
@@ -1307,12 +1317,17 @@ void PopupMenu::setupMenuWidget() {
 			paddingWrap->width(),
 			_st.scrollPadding.bottom()));
 		auto p = QPainter(paddingWrap);
-		if (!top.isEmpty()) {
-			p.fillRect(top, _st.menu.itemBg);
-		}
-		if (!bottom.isEmpty()) {
-			p.fillRect(bottom, _st.menu.itemBg);
-		}
+		const auto fill = [&](QRect rect) {
+			if (rect.isEmpty()) {
+				return;
+			} else if (Platform::InPopupBackdrop(p)) {
+				Platform::FillPopupBackground(p, rect, _st.menu.itemBg->c);
+			} else {
+				p.fillRect(rect, _st.menu.itemBg);
+			}
+		};
+		fill(top);
+		fill(bottom);
 	}, paddingWrap->lifetime());
 
 	rpl::combine(
@@ -1509,7 +1524,14 @@ void PopupMenu::swapStashed(SwitchDirection direction) {
 			return;
 		}
 		auto p = QPainter(raw->overlay.data());
-		p.fillRect(raw->overlay->rect(), _st.menu.itemBg);
+		if (Platform::InPopupBackdrop(p)) {
+			Platform::FillPopupBackground(
+				p,
+				raw->overlay->rect(),
+				_st.menu.itemBg->c);
+		} else {
+			p.fillRect(raw->overlay->rect(), _st.menu.itemBg);
+		}
 
 		const auto progress = raw->animation.value(1.);
 		const auto dir = (raw->direction == SwitchDirection::LeftToRight)
