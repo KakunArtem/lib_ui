@@ -15,6 +15,20 @@
 #include <QtGui/QtEvents>
 
 namespace Ui {
+namespace {
+
+[[nodiscard]] bool InsideCards(not_null<const QWidget*> widget) {
+	for (auto parent = widget->parentWidget()
+		; parent
+		; parent = parent->parentWidget()) {
+		if (parent->property(kCardsProperty).toBool()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+} // namespace
 
 BoxContentDivider::BoxContentDivider(
 	QWidget *parent,
@@ -28,6 +42,11 @@ BoxContentDivider::BoxContentDivider(
 }
 
 void BoxContentDivider::paintEvent(QPaintEvent *e) {
+	if (InsideCards(this)) {
+		// WHY: in a card layout the gap between cards is the divider,
+		// so the bar and its shadows would cut through the panel.
+		return;
+	}
 	QPainter p(this);
 
 	const auto fill = ControlFill(_st.bg);

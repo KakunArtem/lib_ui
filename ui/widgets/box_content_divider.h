@@ -20,6 +20,9 @@ extern const int &boxDividerHeight;
 
 namespace Ui {
 
+// Dividers under a widget with this property set to true paint nothing.
+inline constexpr auto kCardsProperty = "softCards";
+
 class BoxContentDivider : public Ui::RpWidget {
 public:
 	BoxContentDivider(
