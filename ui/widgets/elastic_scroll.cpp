@@ -8,6 +8,7 @@
 
 #include "ui/painter.h"
 #include "ui/ui_utility.h"
+#include "ui/widgets/soft_controls.h"
 #include "base/qt/qt_common_adapters.h"
 #include "styles/style_widgets.h"
 
@@ -106,6 +107,9 @@ constexpr auto kPullBandStiffness = 2.5;
 // Real macOS trackpad flings top out well below this, so anything
 // higher is an artifact of the per-event-pair velocity estimation.
 constexpr auto kMaxTrackedVelocity = 6000.;
+
+// Pixels a Soft Panels scroll thumb grows on each side while hovered.
+constexpr auto kSoftBarGrow = 2.;
 
 } // namespace
 
@@ -286,6 +290,27 @@ void ElasticScrollBar::paintEvent(QPaintEvent *e) {
 	bg.setAlpha(anim::interpolate(0, bg.alpha(), shown));
 	auto bar = anim::color(_st.barBg, _st.barBgOver, barHighlight);
 	bar.setAlpha(anim::interpolate(0, bar.alpha(), shown));
+	if (SoftControls()) {
+		// WHY: a thin thumb is hard to grab, so under Soft Panels it grows
+		// into a wider pill while the pointer is over the bar or dragging.
+		const auto grow = std::clamp(_st.deltax - 1., 0., kSoftBarGrow)
+			* over;
+		const auto widen = [&](QRectF rect) {
+			return _vertical
+				? rect.adjusted(-grow, 0., grow, 0.)
+				: rect.adjusted(0., -grow, 0., grow);
+		};
+		const auto track = widen(QRectF(_area));
+		const auto thumb = widen(QRectF(_bar));
+		PainterHighQualityEnabler hq(p);
+		p.setBrush(bg);
+		const auto trackRadius = std::min(track.width(), track.height()) / 2.;
+		p.drawRoundedRect(track, trackRadius, trackRadius);
+		p.setBrush(bar);
+		const auto thumbRadius = std::min(thumb.width(), thumb.height()) / 2.;
+		p.drawRoundedRect(thumb, thumbRadius, thumbRadius);
+		return;
+	}
 	const auto radius = (_st.round < 0)
 		? (std::min(_area.width(), _area.height()) / 2.)
 		: _st.round;

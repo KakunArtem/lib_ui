@@ -8,6 +8,7 @@
 
 #include "ui/painter.h"
 #include "ui/ui_utility.h"
+#include "ui/widgets/soft_controls.h"
 #include "base/qt/qt_common_adapters.h"
 #include "base/debug_log.h"
 
@@ -19,6 +20,9 @@
 
 namespace Ui {
 namespace {
+
+// Pixels a Soft Panels scroll thumb grows on each side while hovered.
+constexpr auto kSoftBarGrow = 2.;
 
 [[nodiscard]] int ComputeScrollTo(
 		int toFrom,
@@ -308,6 +312,28 @@ void ScrollBar::paintEvent(QPaintEvent *e) {
 	auto bar = anim::color(_st->barBg, _st->barBgOver, _a_barOver.value((_overbar || _moving) ? 1. : 0.));
 	bar.setAlpha(anim::interpolate(0, bar.alpha(), opacity));
 	const auto outer = QRect(deltal, deltat, width() - deltal - deltar, height() - deltat - deltab);
+	if (SoftControls()) {
+		// WHY: a thin thumb is hard to grab, so under Soft Panels it grows
+		// into a wider pill while the pointer is over the bar or dragging.
+		const auto over = _a_over.value((_over || _moving) ? 1. : 0.);
+		const auto grow = std::clamp(_st->deltax - 1., 0., kSoftBarGrow)
+			* over;
+		const auto widen = [&](QRectF rect) {
+			return _vertical
+				? rect.adjusted(-grow, 0., grow, 0.)
+				: rect.adjusted(0., -grow, 0., grow);
+		};
+		const auto track = widen(QRectF(outer));
+		const auto thumb = widen(QRectF(_bar));
+		PainterHighQualityEnabler hq(p);
+		p.setBrush(bg);
+		const auto trackRadius = std::min(track.width(), track.height()) / 2.;
+		p.drawRoundedRect(track, trackRadius, trackRadius);
+		p.setBrush(bar);
+		const auto thumbRadius = std::min(thumb.width(), thumb.height()) / 2.;
+		p.drawRoundedRect(thumb, thumbRadius, thumbRadius);
+		return;
+	}
 	const auto radius = (_st->round < 0)
 		? (std::min(outer.width(), outer.height()) / 2.)
 		: _st->round;
