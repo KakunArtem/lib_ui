@@ -43,7 +43,7 @@ Q_DECLARE_METATYPE(QMargins);
 namespace Ui::Platform {
 namespace {
 
-constexpr auto kDWMWCP_ROUND = DWORD(2);
+constexpr auto kDWMWCP_ROUNDSMALL = DWORD(3);
 constexpr auto kDWMWCP_DONOTROUND = DWORD(1);
 constexpr auto kDWMWA_WINDOW_CORNER_PREFERENCE = DWORD(33);
 constexpr auto kDWMWA_CAPTION_COLOR = DWORD(35);
@@ -303,9 +303,12 @@ void WindowHelper::updateCornersRounding() {
 	if (!_handle || !::Platform::IsWindows11OrGreater()) {
 		return;
 	}
+	// WHY: Windows 11 sizes the window shadow by the corner preference.
+	// Small rounding gets the compact menu-style shadow instead of the
+	// large one, which beta testers found too heavy.
 	const auto preference = (_isFullScreen || _isMaximizedAndTranslucent)
 		? kDWMWCP_DONOTROUND
-		: kDWMWCP_ROUND;
+		: kDWMWCP_ROUNDSMALL;
 	DwmSetWindowAttribute(
 		_handle,
 		kDWMWA_WINDOW_CORNER_PREFERENCE,
