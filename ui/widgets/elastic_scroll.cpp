@@ -6,6 +6,7 @@
 //
 #include "ui/widgets/elastic_scroll.h"
 
+#include "ui/widgets/scroll_math.h"
 #include "ui/painter.h"
 #include "ui/ui_utility.h"
 #include "ui/widgets/soft_controls.h"
@@ -18,43 +19,6 @@
 
 namespace Ui {
 namespace {
-
-[[nodiscard]] int ComputeScrollTo(
-		int toFrom,
-		int toTill,
-		int toMin,
-		int toMax,
-		int current,
-		int size) {
-	if (toFrom < toMin) {
-		toFrom = toMin;
-	} else if (toFrom > toMax) {
-		toFrom = toMax;
-	}
-	const auto exact = (toTill < 0);
-
-	const auto curBottom = current + size;
-	auto scToFrom = toFrom;
-	if (!exact && toFrom >= current) {
-		if (toTill < toFrom) {
-			toTill = toFrom;
-		}
-		if (toTill <= curBottom) {
-			return current;
-		}
-
-		scToFrom = toTill - size;
-		if (scToFrom > toFrom) {
-			scToFrom = toFrom;
-		}
-		if (scToFrom == current) {
-			return current;
-		}
-	} else {
-		scToFrom = toFrom;
-	}
-	return scToFrom;
-}
 
 constexpr auto kOverscrollFromThreshold = -(1 << 30);
 constexpr auto kOverscrollTillThreshold = (1 << 30);
@@ -1923,6 +1887,50 @@ void ElasticScroll::clearOverscroll() {
 
 void ElasticScroll::returnToOverscrollDefaults() {
 	overscrollReturn();
+}
+
+void ElasticScroll::absorbBottomOverscroll(int position) {
+	const auto absorbable = [&] {
+		return !_disabled
+			&& _widget
+			&& (_overscroll > 0)
+			&& (_overscrollTypeTill == OverscrollType::Real)
+			&& !_overscrollDefaultTill
+			&& !overscrollPullSide(1);
+	};
+	if (!absorbable()) {
+		return;
+	}
+	const auto weak = base::make_weak(this);
+	SendPendingMoveResizeEvents(_widget.data());
+	if (!weak) {
+		return;
+	}
+	SendPendingMoveResizeEvents(this);
+	if (!weak || !absorbable()) {
+		return;
+	}
+	const auto edge = lookupOverscrollPinnedEdge();
+	const auto remaining = edge ? (position - *edge) : -1;
+	if (remaining < 0 || remaining >= _overscroll) {
+		return;
+	}
+	const auto returning = _overscrollReturning
+		&& (_springSide > 0)
+		&& _overscrollReturnAnimation.animating();
+	if (returning) {
+		if (!remaining) {
+			overscrollSpringFinish();
+			return;
+		}
+		// The spring is linear in (x0, v0): scaled, it keeps its clock.
+		const auto ratio = float64(remaining) / _overscroll;
+		_springX0 *= ratio;
+		_springV0 *= ratio;
+	}
+	_overscrollAccumulated = currentOverscrollDefaultAccumulated()
+		+ overscrollToAccumulated(1, remaining);
+	applyOverscroll(remaining);
 }
 
 void ElasticScroll::setOverscrollBg(QColor bg) {

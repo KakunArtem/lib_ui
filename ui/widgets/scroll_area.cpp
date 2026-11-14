@@ -6,6 +6,7 @@
 //
 #include "ui/widgets/scroll_area.h"
 
+#include "ui/widgets/scroll_math.h"
 #include "ui/painter.h"
 #include "ui/ui_utility.h"
 #include "ui/widgets/soft_controls.h"
@@ -19,12 +20,11 @@
 #include <QtGui/QWindow>
 
 namespace Ui {
-namespace {
 
 // Pixels a Soft Panels scroll thumb grows on each side while hovered.
 constexpr auto kSoftBarGrow = 2.;
 
-[[nodiscard]] int ComputeScrollTo(
+int ComputeScrollTo(
 		int toFrom,
 		int toTill,
 		int toMin,
@@ -60,8 +60,6 @@ constexpr auto kSoftBarGrow = 2.;
 	}
 	return scToFrom;
 }
-
-} // namespace
 
 // flick scroll taken from http://qt-project.org/doc/qt-4.8/demos-embedded-anomaly-src-flickcharm-cpp.html
 
