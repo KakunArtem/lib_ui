@@ -10,6 +10,7 @@
 #include "ui/widgets/scroll_area.h"
 #include "ui/widgets/labels.h"
 #include "ui/widgets/shadow.h"
+#include "ui/widgets/soft_controls.h"
 #include "ui/wrap/fade_wrap.h"
 #include "ui/text/text_utilities.h"
 #include "ui/rect_part.h"
@@ -342,6 +343,12 @@ void BoxContent::updateShadowsVisibility(anim::type animated) {
 		return;
 	}
 
+	if (property(kNoScrollShadowsProperty).toBool()) {
+		// WHY: soft boxes edge their lists with rounded cards instead.
+		_topShadow->hide(anim::type::instant);
+		_bottomShadow->hide(anim::type::instant);
+		return;
+	}
 	const auto top = _scroll->scrollTop();
 	_topShadow->toggle(
 		((top > 0)

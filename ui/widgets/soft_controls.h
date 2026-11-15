@@ -28,4 +28,8 @@ void SetSoftControls(bool enabled);
 void SetSoftControlHover(QColor hover);
 [[nodiscard]] QColor ControlFill(const style::color &fill);
 
+// A BoxContent with this property set to true never shows the lines
+// at the top and bottom of its scroll area.
+inline constexpr auto kNoScrollShadowsProperty = "softNoScrollShadows";
+
 } // namespace Ui
