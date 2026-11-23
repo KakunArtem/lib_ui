@@ -1004,12 +1004,26 @@ void SettingsButton::paintEvent(QPaintEvent *e) {
 	Painter p(this);
 
 	const auto paintOver = (isOver() || isDown()) && !isDisabled();
-	paintBg(p, e->rect(), paintOver);
+	if (const auto shape = _st.pillRadius
+			? std::optional<QPainterPath>()
+			: CardRowShape(this)) {
+		const auto fill = ControlFill(paintOver ? _st.textBgOver : _st.textBg);
+		if (fill.alpha() > 0) {
+			auto hq = PainterHighQualityEnabler(p);
+			p.fillPath(*shape, fill);
+		}
+		p.save();
+		p.setClipPath(*shape, Qt::IntersectClip);
+		paintRipple(p, 0, 0);
+		p.restore();
+	} else {
+		paintBg(p, e->rect(), paintOver);
 
-	paintRipple(
-		p,
-		_st.pillRadius ? _st.pillMargins.left() : 0,
-		_st.pillRadius ? _st.pillMargins.top() : 0);
+		paintRipple(
+			p,
+			_st.pillRadius ? _st.pillMargins.left() : 0,
+			_st.pillRadius ? _st.pillMargins.top() : 0);
+	}
 
 	const auto outerw = width();
 	paintText(p, paintOver, outerw);
@@ -1161,7 +1175,13 @@ not_null<RippleButton*> CreateSimpleSettingsButton(
 		auto p = QPainter(result);
 		const auto paintOver = (result->isOver() || result->isDown())
 			&& !result->isDisabled();
-		if (paintOver) {
+		if (const auto shape = CardRowShape(result)) {
+			if (paintOver) {
+				auto hq = PainterHighQualityEnabler(p);
+				p.fillPath(*shape, ControlFill(bg));
+			}
+			p.setClipPath(*shape);
+		} else if (paintOver) {
 			p.fillRect(result->rect(), bg);
 		}
 		result->paintRipple(p, 0, 0);
